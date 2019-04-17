@@ -40,10 +40,10 @@ def load_data(input_file, size=32):
 
 
 def syn_nois(r,c):
-    img = np.zerso([r,c], dtype=np.uint8)
+    img = np.zeros([r,c], dtype=np.uint8)
     for i in range(r):
       for j in range(c):
-        if random() > 0.1
+        if random() > 0.1:
           continue
         w=math.ceil(random()*255)
         img[i][j] = w
@@ -53,8 +53,8 @@ if __name__ == '__main__':
     input_file, gen_images, hist_sorted  = parse_arguments()
     size = 64
     blk_h = size+4
-    R = 9
-    C = 16
+    R = 9*4
+    C = 16*4
     n = R*C
 
     x, y = load_data(input_file, size)
@@ -63,6 +63,8 @@ if __name__ == '__main__':
     # Each image will be 3600x3600 pixels (10 000) images
 
     blank_image = None
+    ori_image = None
+    noi_image = None
     curr_index = 0
     image_index = 0
 
@@ -72,8 +74,9 @@ if __name__ == '__main__':
     if not os.path.exists('res'):
         os.makedirs('res')
 
-
-
+    no=[]
+    for i in range(n):
+      no.append(syn_nois(size,size))
 
     if gen_images:
         for i in range(x.shape[0]):
@@ -81,13 +84,27 @@ if __name__ == '__main__':
                 if blank_image is not None:
                     print('Saving %d images, current index: %d' % (n,curr_index))
                     blank_image.save('res/Image_%d.png' % image_index)
+                    ori_image.save('res/Ori_%d.png' % image_index)
+                    noi_image.save('res/Noi_%d.png' % image_index)
                     image_index += 1
                     break
                 blank_image = Image.new('RGB', (blk_h*C, blk_h*R))
+                ori_image = Image.new('RGB', (blk_h*C, blk_h*R))
+                noi_image = Image.new('RGB', (blk_h*C, blk_h*R))
             x_pos = (curr_index % n) % C * blk_h
             y_pos = (curr_index % n) // C * blk_h
 
-            blank_image.paste(Image.fromarray(x[curr_index]), (x_pos + 2, y_pos + 2))
+            img = x[curr_index]
+            noi = no[i]
+            ori_image.paste(Image.fromarray(img), (x_pos + 2, y_pos + 2))
+            noi_image.paste(Image.fromarray(noi), (x_pos + 2, y_pos + 2))
+           
+            no_img = np.expand_dims(noi,axis=2)
+            mask = no_img>10
+            img = (img * (1-mask) + (0.8*img+0.2*no_img)*mask)
+            img = img.astype(np.uint8)
+
+            blank_image.paste(Image.fromarray(img), (x_pos + 2, y_pos + 2))
             curr_index += 1
 
         blank_image.save('res/Image_%d.png' % image_index)
