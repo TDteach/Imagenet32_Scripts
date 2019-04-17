@@ -6,6 +6,9 @@ import os
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
+import math
+from random import random
+
 # Test script
 
 # Change this one to check other file
@@ -34,6 +37,17 @@ def load_data(input_file, size=32):
     x = x.reshape((x.shape[0], size, size, 3))
 
     return x, y
+
+
+def syn_nois(r,c):
+    img = np.zerso([r,c], dtype=np.uint8)
+    for i in range(r):
+      for j in range(c):
+        if random() > 0.1
+          continue
+        w=math.ceil(random()*255)
+        img[i][j] = w
+    return img
 
 if __name__ == '__main__':
     input_file, gen_images, hist_sorted  = parse_arguments()
