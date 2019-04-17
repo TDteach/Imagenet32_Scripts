@@ -23,20 +23,27 @@ def parse_arguments():
     return args.in_file, args.gen_images, args.sorted_histogram
 
 
-def load_data(input_file):
+def load_data(input_file, size=32):
 
     d = unpickle(input_file)
     x = d['data']
     y = d['labels']
 
-    x = np.dstack((x[:, :1024], x[:, 1024:2048], x[:, 2048:]))
-    x = x.reshape((x.shape[0], 32, 32, 3))
+    l = size*size
+    x = np.dstack((x[:, :l], x[:, l:2*l], x[:, 2*l:]))
+    x = x.reshape((x.shape[0], size, size, 3))
 
     return x, y
 
 if __name__ == '__main__':
     input_file, gen_images, hist_sorted  = parse_arguments()
-    x, y = load_data(input_file)
+    size = 64
+    blk_h = size+4
+    R = 9
+    C = 16
+    n = R*C
+
+    x, y = load_data(input_file, size)
 
     # Lets save all images from this file
     # Each image will be 3600x3600 pixels (10 000) images
@@ -51,16 +58,20 @@ if __name__ == '__main__':
     if not os.path.exists('res'):
         os.makedirs('res')
 
+
+
+
     if gen_images:
         for i in range(x.shape[0]):
-            if curr_index % 10000 == 0:
+            if curr_index % n == 0:
                 if blank_image is not None:
-                    print('Saving 10 000 images, current index: %d' % curr_index)
+                    print('Saving %d images, current index: %d' % (n,curr_index))
                     blank_image.save('res/Image_%d.png' % image_index)
                     image_index += 1
-                blank_image = Image.new('RGB', (36*100, 36*100))
-            x_pos = (curr_index % 10000) % 100 * 36
-            y_pos = (curr_index % 10000) // 100 * 36
+                    break
+                blank_image = Image.new('RGB', (blk_h*C, blk_h*R))
+            x_pos = (curr_index % n) % C * blk_h
+            y_pos = (curr_index % n) // C * blk_h
 
             blank_image.paste(Image.fromarray(x[curr_index]), (x_pos + 2, y_pos + 2))
             curr_index += 1
@@ -75,10 +86,10 @@ if __name__ == '__main__':
 
     if hist_sorted:
         graph.sort()
-        
+
     x = [i for i in range(1000)]
     ax = plt.axes()
-    plt.bar(left=x, height=graph, color='darkblue', edgecolor='darkblue')
+    plt.bar(x, height=graph, color='darkblue', edgecolor='darkblue')
     ax.set_xlabel('Class', fontsize=20)
     ax.set_ylabel('Samples', fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=15)
